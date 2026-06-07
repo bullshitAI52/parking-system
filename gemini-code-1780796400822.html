@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>停车场极速计费与营收管理系统</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #eef2f7 0%, #d9e2ec 100%);
+            --primary-blue: #0b3c7c;
+            --primary-active: #072752;
+            --card-bg: #ffffff;
+            --text-main: #243b53;
+            --text-muted: #627d98;
+            --amber-bg: #fffde7;
+            --amber-border: #fff59d;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            padding: 12px;
+            color: var(--text-main);
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(13, 71, 161, 0.08), 0 1px 3px rgba(0,0,0,0.02);
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-blue);
+            margin: 0 0 14px;
+            font-size: 19px;
+            font-weight: 800;
+            border-bottom: 2px solid #bcccdc;
+            padding-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .form-group { margin-bottom: 12px; }
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        .time-input-group {
+            display: flex;
+            gap: 8px;
+        }
+        input[type="date"], input[type="time"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #bac7d5;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #f0f4f8;
+            color: var(--text-main);
+            font-weight: 500;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(11, 60, 124, 0.1);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 5px;
+        }
+        .btn-mini {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-mini:active { background: #bbdefb; }
+        .btn-mini.refresh {
+            background: #eceff1;
+            color: #455a64;
+            border-color: #cfd8dc;
+        }
+        .btn-mini.refresh:active { background: #cfd8dc; }
+
+        .btn-calc {
+            width: 100%;
+            background: var(--primary-blue);
+            color: #fff;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(11, 60, 124, 0.2);
+            letter-spacing: 1px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: opacity 0.15s;
+        }
+        .btn-calc:active { background: var(--primary-active); }
+        .btn-calc:disabled { opacity: 0.6; pointer-events: none; }
+
+        .result-box {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 10px;
+            background: var(--amber-bg);
+            border: 1px solid var(--amber-border);
+            display: none;
+        }
+        .result-title {
+            font-size: 13px;
+            color: #795548;
+            margin-bottom: 6px;
+            border-bottom: 1px dashed #e0d4b8;
+            padding-bottom: 3px;
+            font-weight: bold;
+        }
+        .fee-display {
+            font-size: 34px;
+            color: #d32f2f;
+            font-weight: 900;
+            text-align: center;
+            margin: 6px 0;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+        .btn-copy {
+            background: #fff;
+            border: 1px solid #d32f2f;
+            color: #d32f2f;
+            padding: 6px 14px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 6px auto 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-copy:active { background: #ffebee; }
+
+        .detail-text {
+            font-size: 12px;
+            color: #486581;
+            background: #f0f4f8;
+            padding: 9px;
+            border-radius: 6px;
+            line-height: 1.4;
+            margin-top: 10px;
+            border-left: 3px solid #bac7d5;
+        }
+        .script-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-left: 4px solid #2e7d32;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #1b5e20;
+            line-height: 1.5;
+        }
+        .error-msg {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 11px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .history-box {
+            margin-top: 25px;
+            border-top: 2px dashed #bcccdc;
+            padding-top: 14px;
+        }
+        .summary-banner {
+            background: #e1f5fe;
+            border: 1px solid #b3e5fc;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #01579b;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .history-title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .history-title { font-size: 14px; font-weight: bold; }
+        .action-links { display: flex; gap: 12px; }
+        .btn-link {
+            background: none;
+            color: var(--text-muted);
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-link:active { color: var(--primary-blue); }
+
+        .history-list { max-height: 280px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #4a5568;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+        }
+        .history-item-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 4px;
+        }
+        .history-time-tag { color: #718096; }
+        .history-money-tag {
+            font-weight: bold;
+            color: #d32f2f;
+            font-size: 14px;
+            margin-right: 65px;
+        }
+
+        .plate-tag {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .plate-tag.has-val {
+            background: #0b3c7c;
+            color: white;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .status-badge.normal { background: #e8f5e9; color: #2e7d32; }
+        .status-badge.free   { background: #e3f2fd; color: #0d47a1; }
+        .status-badge.escape { background: #ffebee; color: #c62828; }
+
+        .btn-edit-plate {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-item-copy {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            background: #fff;
+            border: 1px solid #cbd5e0;
+            color: #4a5568;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        @media (max-width: 400px) {
+            body { padding: 8px; }
+            .container { padding: 14px; border-radius: 12px; }
+            h2 { font-size: 17px; }
+            .fee-display { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>停车场极速算费与营收系统</h2>
+
+    <div class="form-group">
+        <label>📅 入场时间 (必填)</label>
+        <div class="time-input-group">
+            <input type="date" id="in-date">
+            <input type="time" id="in-time" step="1">
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">提示：点击文本框即可通过滚轮选择日期和时间</div>
+    </div>
+
+    <div class="form-group">
+        <label>📅 出场时间 (默认当前手机时间)</label>
+        <div class="time-input-group">
+            <input type="date" id="out-date">
+            <input type="time" id="out-time" step="1">
+        </div>
+        <div class="quick-actions">
+            <button class="btn-mini refresh" id="btn-refresh">🔄 刷新当前</button>
+            <button class="btn-mini" data-adjust="-5">- 5 分钟</button>
+            <button class="btn-mini" data-adjust="-15">- 15 分钟</button>
+            <button class="btn-mini" data-adjust="-30">- 30 分钟</button>
+        </div>
+    </div>
+
+    <button class="btn-calc" id="btn-calc">秒速算费并保存流水 ⬇️</button>
+
+    <div id="error-block" class="error-msg"></div>
+
+    <div id="result-block" class="result-box">
+        <div class="result-title">当前计算结果</div>
+        <div style="font-size:13px;">
+            停车总长：<span id="res-duration" style="font-weight:bold;color:#000;"></span>
+        </div>
+        <div class="fee-display"><span id="res-fee">0</span> 元</div>
+
+        <button class="btn-copy" id="btn-copy-action">📋 复制此单对账文本发微信</button>
+
+        <div class="detail-text">
+            <strong>📊 客户对账明细：</strong><br>
+            <span id="res-process">暂无</span>
+        </div>
+
+        <div class="script-box">
+            <strong>💬 统一话术：</strong>"不好意思，系统是以30分钟为临界点自动续费的，通过30分钟系统就自动计入下一个时段了，我们必须按该显示的金额收取，请您理解。"
+        </div>
+    </div>
+
+    <div class="history-box">
+        <div id="summary-banner" class="summary-banner">
+            今日当班小结：已录入 0 笔 ｜ 收费总计：0 元
+        </div>
+
+        <div class="history-title-area">
+            <span class="history-title">📋 今日收费流水（支持事后补录车牌/状态）</span>
+            <div class="action-links">
+                <button class="btn-link" id="btn-export">📤 导出CSV</button>
+                <button class="btn-link" id="btn-clear">🗑️ 清空流水</button>
+            </div>
+        </div>
+        <div id="history-list" class="history-list"></div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ========== DOM 缓存 ==========
+    const $ = (id) => document.getElementById(id);
+    const elInDate   = $('in-date');
+    const elInTime   = $('in-time');
+    const elOutDate  = $('out-date');
+    const elOutTime  = $('out-time');
+    const elBtnCalc  = $('btn-calc');
+    const elError    = $('error-block');
+    const elResult   = $('result-block');
+    const elResDur   = $('res-duration');
+    const elResFee   = $('res-fee');
+    const elResProc  = $('res-process');
+    const elCopyBtn  = $('btn-copy-action');
+    const elHistory  = $('history-list');
+    const elBanner   = $('summary-banner');
+    const elToast    = $('toast');
+
+    const STORAGE_KEY = 'park_history_v4';
+    let toastTimer = null;
+    let lastCalcCopyText = '';
+
+    // ========== 工具函数 ==========
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function fmtDate(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+
+    function fmtTime(d) {
+        return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function toast(msg) {
+        clearTimeout(toastTimer);
+        elToast.textContent = msg;
+        elToast.classList.add('show');
+        toastTimer = setTimeout(() => elToast.classList.remove('show'), 1800);
+    }
+
+    // ========== localStorage 封装 ==========
+    function loadHistory() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveHistory(list) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        } catch (_) {
+            toast('⚠️ 存储空间不足，请导出数据后清理旧记录');
+        }
+    }
+
+    // ========== 日期输入处理 ==========
+    function setOutNow() {
+        const now = new Date();
+        elOutDate.value = fmtDate(now);
+        elOutTime.value = fmtTime(now);
+    }
+
+    function adjustOut(mins) {
+        if (!elOutDate.value || !elOutTime.value) return;
+        const dt = new Date(elOutDate.value + 'T' + elOutTime.value);
+        if (isNaN(dt.getTime())) return;
+        dt.setMinutes(dt.getMinutes() + mins);
+        elOutDate.value = fmtDate(dt);
+        elOutTime.value = fmtTime(dt);
+    }
+
+    // ========== 核心计费引擎 ==========
+    function calcFee(inDateStr, inTimeStr, outDateStr, outTimeStr) {
+        const inDt  = new Date(inDateStr + 'T' + inTimeStr);
+        const outDt = new Date(outDateStr + 'T' + outTimeStr);
+
+        if (outDt <= inDt) return { error: '❌ 错误：出场时间不能早于或等于入场时间！' };
+
+        const totalSec = Math.floor((outDt.getTime() - inDt.getTime()) / 1000);
+        const days    = Math.floor(totalSec / 86400);
+        const hours   = Math.floor((totalSec % 86400) / 3600);
+        const minutes = Math.floor((totalSec % 3600) / 60);
+        const seconds = totalSec % 60;
+
+        let durStr = (days > 0 ? days + '天 ' : '') + hours + '小时' + minutes + '分钟' + seconds + '秒';
+
+        const totalMin   = totalSec / 60;
+        const fullDays   = Math.floor(totalMin / 1440);
+        const remMin     = totalMin % 1440;
+
+        let remFee = 0, procStr = '';
+        if (remMin <= 30) {
+            procStr = '不满/整30分(免费): 0元';
+        } else if (remMin <= 60) {
+            remFee = 5; procStr = '超30分入首小时: 5元';
+        } else {
+            const extraHours = Math.ceil((remMin - 60) / 60);
+            remFee = 5 + extraHours * 3;
+            procStr = '首小时5元 + 溢出' + extraHours + 'h×3元';
+            if (remFee > 40) { remFee = 40; procStr += ' (封顶40元)'; }
+        }
+
+        const totalFee = fullDays * 40 + remFee;
+        const fullProc = fullDays > 0
+            ? '[超24h] ' + fullDays + '天×40元 + 余下(' + procStr + ') = ' + totalFee + '元'
+            : procStr + ' = ' + totalFee + '元';
+
+        return { durStr, totalFee, fullProc };
+    }
+
+    // ========== 主操作：算费 + 保存 ==========
+    function calculateFee() {
+        elError.style.display = 'none';
+        elResult.style.display = 'none';
+
+        const inDate  = elInDate.value;
+        const inTime  = elInTime.value;
+        const outDate = elOutDate.value;
+        const outTime = elOutTime.value;
+
+        if (!inDate || !inTime || !outDate || !outTime) {
+            elError.textContent = '⚠️ 请完整输入入场和出场时间！';
+            elError.style.display = 'block';
+            return;
+        }
+
+        const result = calcFee(inDate, inTime, outDate, outTime);
+        if (result.error) {
+            elError.textContent = result.error;
+            elError.style.display = 'block';
+            return;
+        }
+
+        elResDur.textContent  = result.durStr;
+        elResFee.textContent  = result.totalFee;
+        elResProc.textContent = result.fullProc;
+        elResult.style.display = 'block';
+        elResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // 构建复制文本
+        lastCalcCopyText = [
+            '【车辆对账单】',
+            '车牌备注：[未填]',
+            '入场时间：' + inDate.slice(5) + ' ' + inTime.slice(0, 5),
+            '出场时间：' + outDate.slice(5) + ' ' + outTime.slice(0, 5),
+            '停车总长：' + result.durStr,
+            '算费金额：' + result.totalFee + ' 元',
+            '明细：' + result.fullProc
+        ].join('\n');
+
+        // 保存流水
+        const history = loadHistory();
+        history.unshift({
+            id:           Date.now(),
+            calcTime:     fmtTime(new Date()),
+            plate:        '',
+            status:       'normal',
+            inTime:       inDate.slice(5) + ' ' + inTime.slice(0, 5),
+            outTime:      outDate.slice(5) + ' ' + outTime.slice(0, 5),
+            duration:     result.durStr,
+            fee:          result.totalFee,
+            finalProcess: result.fullProc
+        });
+        if (history.length > 250) history.length = 250;
+        saveHistory(history);
+        renderHistory();
+    }
+
+    // ========== 历史记录渲染 ==========
+    function renderHistory() {
+        const history = loadHistory();
+        if (history.length === 0) {
+            elBanner.innerHTML = '今日当班小结：已录入 <b>0</b> 笔 ｜ 实际收费总计：<b>0</b> 元';
+            elHistory.innerHTML = '<div style="text-align:center;color:#aaa;font-size:13px;padding:20px;">暂无收费记录</div>';
+            return;
+        }
+
+        const totalCount = history.length;
+        const totalMoney = history.reduce((s, it) => s + Number(it.fee), 0);
+        elBanner.innerHTML = '今日当班小结：已录入 <b>' + totalCount + '</b> 笔 ｜ 实际营收总计：<b>' + totalMoney + '</b> 元';
+
+        let html = '';
+        const statusMap = {
+            normal: '<span class="status-badge normal">正常收费</span>',
+            free:   '<span class="status-badge free">免单放行</span>',
+            escape: '<span class="status-badge escape">冲卡逃费</span>'
+        };
+
+        history.forEach(item => {
+            const plateHtml = item.plate
+                ? '<span class="plate-tag has-val">' + escHtml(item.plate) + '</span>'
+                : '<span class="plate-tag">[待补车牌]</span>';
+            const badgeHtml = statusMap[item.status] || statusMap.normal;
+
+            html += '<div class="history-item">' +
+                '<button class="btn-edit-plate" data-edit="' + item.id + '">✏️ 登记</button>' +
+                '<button class="btn-item-copy" data-copy="' + item.id + '">📋 复制</button>' +
+                '<div class="history-item-top">' +
+                    '<span class="history-time-tag">⏱️ 计费: ' + escHtml(item.calcTime) + ' ｜ ' + plateHtml + ' ' + badgeHtml + '</span>' +
+                    '<span class="history-money-tag">' + item.fee + ' 元</span>' +
+                '</div>' +
+                '<div>进场: ' + escHtml(item.inTime) + ' ｜ 出场: ' + escHtml(item.outTime) + '</div>' +
+                '<div style="margin-top:2px;color:#243b53;">总长: <strong>' + escHtml(item.duration) + '</strong></div>' +
+            '</div>';
+        });
+        elHistory.innerHTML = html;
+    }
+
+    function escHtml(str) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return String(str).replace(/[&<>"']/g, c => map[c]);
+    }
+
+    // ========== 事件委托：历史列表操作 ==========
+    elHistory.addEventListener('click', function (e) {
+        const editBtn = e.target.closest('[data-edit]');
+        const copyBtn = e.target.closest('[data-copy]');
+
+        if (editBtn) {
+            editPlate(Number(editBtn.getAttribute('data-edit')));
+        } else if (copyBtn) {
+            copyItemText(Number(copyBtn.getAttribute('data-edit')));
+        }
+    });
+
+    function editPlate(id) {
+        const history = loadHistory();
+        const idx = history.findIndex(it => it.id === id);
+        if (idx === -1) return;
+
+        const newPlate = prompt('【第一步】请输入车牌号或备注：', history[idx].plate);
+        if (newPlate === null) return;
+
+        history[idx].plate = newPlate.trim().toUpperCase();
+
+        const choice = prompt('【第二步】修改放行状态，请输入对应数字：\n1 - 正常全额收费\n2 - 特殊免单放行 (实收改为0元)\n3 - 无理强行冲卡/逃费 (实收改为0元)', '1');
+        if (choice === '2') {
+            history[idx].status = 'free';
+            history[idx].fee = 0;
+        } else if (choice === '3') {
+            history[idx].status = 'escape';
+            history[idx].fee = 0;
+        } else {
+            history[idx].status = 'normal';
+        }
+
+        saveHistory(history);
+        renderHistory();
+    }
+
+    function copyItemText(id) {
+        const history = loadHistory();
+        const item = history.find(it => it.id === id);
+        if (!item) return;
+
+        const statusLabels = { free: '[特殊免单]', escape: '[强行冲卡逃费]', normal: '[正常收费]' };
+        const text = [
+            '【车辆对账单】',
+            '状态：' + (statusLabels[item.status] || '[正常收费]'),
+            '车牌备注：' + (item.plate || '[未填]'),
+            '入场时间：' + item.inTime,
+            '出场时间：' + item.outTime,
+            '停车总长：' + item.duration,
+            '实收金额：' + item.fee + ' 元',
+            '明细：' + item.finalProcess
+        ].join('\n');
+        copyText(text);
+    }
+
+    // ========== 复制功能 ==========
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(
+            () => toast('✅ 已复制，可直接发送'),
+            () => toast('复制失败，请手动长按复制')
+        );
+    }
+
+    // ========== 导出 CSV ==========
+    function exportCSV() {
+        const history = loadHistory();
+        if (history.length === 0) { toast('暂无数据可导出'); return; }
+
+        const statusLabels = { free: '免单', escape: '冲卡逃费', normal: '正常收费' };
+        let csv = '﻿计费时间,车牌备注,状态,入场时间,出场时间,总时长,实收金额,计费明细\n';
+
+        history.forEach(item => {
+            const plate   = (item.plate || '未填').replace(/,/g, '，');
+            const status  = statusLabels[item.status] || '正常收费';
+            const process = item.finalProcess.replace(/,/g, '，');
+            csv += item.calcTime + ',' + plate + ',' + status + ',' +
+                   item.inTime + ',' + item.outTime + ',' +
+                   item.duration + ',' + item.fee + ',' + process + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = '停车场收费流水_' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('📤 导出成功');
+    }
+
+    function clearHistory() {
+        if (!confirm('确定要清空所有收费流水吗？交班前请确保已导出CSV备份。')) return;
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        renderHistory();
+    }
+
+    // ========== 事件绑定 ==========
+    elBtnCalc.addEventListener('click', calculateFee);
+
+    $('btn-refresh').addEventListener('click', setOutNow);
+
+    // 快捷调整按钮（事件委托）
+    document.querySelector('.quick-actions').addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-adjust]');
+        if (btn) adjustOut(Number(btn.getAttribute('data-adjust')));
+    });
+
+    elCopyBtn.addEventListener('click', function () {
+        if (lastCalcCopyText) copyText(lastCalcCopyText);
+    });
+
+    $('btn-export').addEventListener('click', exportCSV);
+    $('btn-clear').addEventListener('click', clearHistory);
+
+    // ========== 键盘快捷键 ==========
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName !== 'BUTTON') {
+            e.preventDefault();
+            calculateFee();
+        }
+    });
+
+    // ========== 初始化 ==========
+    (function init() {
+        const now = new Date();
+        elOutDate.value = fmtDate(now);
+        elOutTime.value = fmtTime(now);
+
+        const approxIn = new Date(now.getTime() - 2 * 3600 * 1000 - 20 * 60 * 1000);
+        elInDate.value = fmtDate(approxIn);
+        elInTime.value = fmtTime(approxIn);
+
+        renderHistory();
+    })();
+})();
+</script>
+
+</body>
+</html>
