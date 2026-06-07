@@ -310,6 +310,21 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+        .btn-item-delete {
+            position: absolute;
+            left: 8px;
+            bottom: 8px;
+            background: #fff;
+            border: 1px solid #e0c8c8;
+            color: #c0392b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-item-delete:active { background: #ffebee; }
 
         .toast {
             position: fixed;
@@ -608,6 +623,7 @@
             html += '<div class="history-item">' +
                 '<button class="btn-edit-plate" data-edit="' + item.id + '">✏️ 登记</button>' +
                 '<button class="btn-item-copy" data-copy="' + item.id + '">📋 复制</button>' +
+                '<button class="btn-item-delete" data-delete="' + item.id + '">🗑️ 删除</button>' +
                 '<div class="history-item-top">' +
                     '<span class="history-time-tag">⏱️ 计费: ' + escHtml(item.calcTime) + ' ｜ ' + plateHtml + ' ' + badgeHtml + '</span>' +
                     '<span class="history-money-tag">' + item.fee + ' 元</span>' +
@@ -628,11 +644,14 @@
     elHistory.addEventListener('click', function (e) {
         const editBtn = e.target.closest('[data-edit]');
         const copyBtn = e.target.closest('[data-copy]');
+        const deleteBtn = e.target.closest('[data-delete]');
 
         if (editBtn) {
             editPlate(Number(editBtn.getAttribute('data-edit')));
         } else if (copyBtn) {
-            copyItemText(Number(copyBtn.getAttribute('data-edit')));
+            copyItemText(Number(copyBtn.getAttribute('data-copy')));
+        } else if (deleteBtn) {
+            deleteItem(Number(deleteBtn.getAttribute('data-delete')));
         }
     });
 
@@ -678,6 +697,18 @@
             '明细：' + item.finalProcess
         ].join('\n');
         copyText(text);
+    }
+
+    function deleteItem(id) {
+        if (!confirm('确定要删除这条收费记录吗？此操作不可恢复。')) return;
+        const history = loadHistory();
+        const idx = history.findIndex(it => it.id === id);
+        if (idx !== -1) {
+            history.splice(idx, 1);
+            saveHistory(history);
+            renderHistory();
+            toast('已删除该条记录');
+        }
     }
 
     // ========== 复制功能 ==========
